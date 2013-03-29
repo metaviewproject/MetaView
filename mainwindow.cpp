@@ -1,8 +1,6 @@
 #include <QtGui>
 #include <poppler-qt4.h>
 #include "mainwindow.h"
-#include <iostream>
-#include <QStringList>
 
 MainWindow::MainWindow()
 {
