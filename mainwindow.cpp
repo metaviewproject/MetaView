@@ -93,12 +93,14 @@ void MainWindow::addDirToWatch()
     watcher->addPath(dirName);
 }
 
-void MainWindow::fileWasChanged(const QString&)
+void MainWindow::fileWasChanged(const QString& fileName)
 {
+  QMessageBox::information(this, "Hello", fileName);
 }
 
-void MainWindow::dirWasChanged(const QString&)
+void MainWindow::dirWasChanged(const QString& dirName)
 {
+  QMessageBox::information(this, "Hello", dirName);
 }
 
 void MainWindow::quit()
