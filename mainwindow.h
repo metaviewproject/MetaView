@@ -2,9 +2,11 @@
 #define METAVIEW_H
 
 #include <QMainWindow>
-#include <QFileSystemWatcher>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QDateTime>
+#include <QStringList>
+#include <QComboBox>
 
 class MainWindow : public QMainWindow
 {
@@ -13,29 +15,28 @@ class MainWindow : public QMainWindow
 public:
   MainWindow();
 
-private slots:
-  void addDirToWatch();
-  void addFileToWatch();
-  void fileWasChanged(const QString&);
-  void dirWasChanged(const QString&);
-  void quit();
+public slots:
+  void update();
+  void reloadView(const QString&);
 
 private:
-  void createActions();
-  void createMenus();
+  void createToolBar();
   QImage loadImage(const QString&);
   void createView(const QString&);
-  void createWatcher();
+  void createTimer();
+
+  QToolBar *toolBar;
+  QComboBox *mpFiles;
+  QString activeEpsFile;
+  QStringList listOfEpsFiles;
 
   QGraphicsScene *scene;
   QGraphicsView *view;
 
-  QMenu *fileMenu;
-  QAction *watchFileAction;
-  QAction *watchDirAction;
-  QAction *exitAction;
+  QTimer *timer;
 
-  QFileSystemWatcher *watcher;
+  QStringList listOfMetapostFiles;
+  QList<QDateTime> modificationTimes;
 };
 
 #endif

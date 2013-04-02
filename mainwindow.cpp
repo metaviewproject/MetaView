@@ -1,39 +1,24 @@
 #include <QtGui>
 #include <poppler-qt4.h>
 #include "mainwindow.h"
+#include <iostream>
+#include <QProcess>
 
 MainWindow::MainWindow()
 {
-  createActions();
-  createMenus();
-  createView("test.pdf");
-  createWatcher();
+  QDir().mkdir(".metaview");
+  createToolBar();
+  createTimer();
 
-  setCentralWidget(view);
+  QDir currentDir(".");
+  listOfMetapostFiles = currentDir.entryList(QStringList("*.mp"));
+
+  for (int i = 0; i < listOfMetapostFiles.size(); ++i) {
+    QFileInfo info(listOfMetapostFiles.at(i));
+    modificationTimes << info.lastModified();
+  }
+
   setWindowTitle("MetaView");
-}
-
-void MainWindow::createActions()
-{
-  watchFileAction = new QAction("Watch &File", this);
-  connect(watchFileAction, SIGNAL(triggered()),
-      this, SLOT(addFileToWatch()));
-  
-  watchDirAction = new QAction("Watch &Directory", this);
-  connect(watchDirAction, SIGNAL(triggered()),
-      this, SLOT(addDirToWatch()));
-  
-  exitAction = new QAction("&Close Window", this);
-  connect(exitAction, SIGNAL(triggered()), this, SLOT(quit()));
-}
-
-void MainWindow::createMenus()
-{
-  fileMenu = menuBar()->addMenu(tr("&File"));
-  fileMenu->addAction(watchFileAction);
-  fileMenu->addAction(watchDirAction);
-  fileMenu->addSeparator();
-  fileMenu->addAction(exitAction);
 }
 
 QImage MainWindow::loadImage(const QString& path)
@@ -64,53 +49,66 @@ void MainWindow::createView(const QString& path)
   view = new QGraphicsView(scene);
 }
 
-void MainWindow::createWatcher()
+void MainWindow::createToolBar()
 {
-  watcher = new QFileSystemWatcher(this);
-  connect(watcher, SIGNAL(fileChanged(const QString&)),
-      this, SLOT(fileWasChanged(const QString&)));
-  connect(watcher, SIGNAL(directoryChanged(const QString&)),
-      this, SLOT(dirWasChanged(const QString&)));
+  toolBar = addToolBar("main toolbar");
+  mpFiles = new QComboBox;
+  QDir currentDir;
+  listOfEpsFiles = currentDir.entryList(QStringList("*.eps"));
+  for (int i = 0; i < listOfEpsFiles.size(); ++i) {
+    listOfEpsFiles[i] = listOfEpsFiles[i].remove(listOfEpsFiles[i].size()-4, 4);
+    mpFiles->addItem(listOfEpsFiles[i]);
+  }
+  toolBar->addWidget(mpFiles);
+  connect(mpFiles, SIGNAL(activated(const QString&)), this, SLOT(reloadView(const QString&)));
 }
 
-void MainWindow::addFileToWatch()
+void MainWindow::createTimer()
 {
-  QString fileName;
-  fileName = QFileDialog::getOpenFileName(this,
-      tr("Select a File to Watch"), "", tr("MetaPost Files (*.mp)"));
-
-  if (fileName != "")
-    watcher->addPath(fileName);
+  timer = new QTimer(this);
+  connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+  timer->start(1000);
 }
 
-void MainWindow::addDirToWatch()
+void MainWindow::update()
 {
-  QString dirName;
-  dirName = QFileDialog::getExistingDirectory(this,
-      tr("Select a Directory to Watch"), "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-  if (dirName != "")
-    watcher->addPath(dirName);
+  for (int i = 0; i < listOfMetapostFiles.size(); ++i) {
+    QFileInfo info(listOfMetapostFiles[i]);
+    QDateTime currentTime = info.lastModified();
+    if (currentTime > modificationTimes[i]) {
+      QStringList arguments;
+      arguments << listOfMetapostFiles[i];
+      QProcess *process = new QProcess(this);
+      process->start("./mpeps.py", arguments);
+      process->waitForFinished();
+      QDir currentDir(".metaview");
+      listOfEpsFiles = currentDir.entryList(QStringList("*.eps"));
+      for (int j = 0; j < listOfEpsFiles.size(); ++j)
+        listOfEpsFiles[j] = listOfEpsFiles[j].remove(listOfEpsFiles[j].size()-4, 4);
+      mpFiles->clear();
+      for (int k = 0; k < listOfEpsFiles.size(); ++k)
+        mpFiles->addItem(listOfEpsFiles[k]);
+      QStringList arguments2;
+      arguments2 << (activeEpsFile + ".eps");
+      process->start("./epspdf.py", arguments2);
+      process->waitForFinished();
+      reloadView(activeEpsFile);
+      modificationTimes[i] = currentTime;
+    }
+  }
 }
 
-void MainWindow::fileWasChanged(const QString& fileName)
+void MainWindow::reloadView(const QString& file)
 {
-  QMessageBox::information(this, "Hello", fileName);
-}
-
-void MainWindow::dirWasChanged(const QString& dirName)
-{
-  QMessageBox::information(this, "Hello", dirName);
-}
-
-void MainWindow::quit()
-{
-  QMessageBox messageBox;
-  messageBox.setWindowTitle(tr("MetaView"));
-  messageBox.setText(tr("Do you really want to quit"));
-  messageBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-  messageBox.setDefaultButton(QMessageBox::No);
-  
-  if (messageBox.exec() == QMessageBox::Yes)
-    qApp->quit();
+  if (file != "") {
+    activeEpsFile = file;
+    QProcess *process = new QProcess(this);
+    QStringList arguments;
+    arguments << (activeEpsFile + ".eps");
+    process->start("./epspdf.py", arguments);
+    process->waitForFinished();
+    QString activePdfFile = ".metaview/" + activeEpsFile + ".pdf";
+    createView(activePdfFile);
+    setCentralWidget(view);
+  }
 }
