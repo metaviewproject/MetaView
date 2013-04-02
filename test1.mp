@@ -1,4 +1,5 @@
 outputtemplate := "%j%c.eps";
+input lib;
 beginfig(1);
 
 pair pi[];
@@ -17,8 +18,8 @@ draw po[4]--po[0] withcolor blue;
 draw pi[0]--pi[2]--pi[4]--pi[1]--pi[3]--cycle withcolor 0.6green;
 
 for i = 0 upto 4:
-  draw pi[i] withpen pencircle scaled 5;
-  draw po[i] withpen pencircle scaled 5;
+  draw vertex(pi[i]);
+  draw vertex(po[i]);
 endfor;
 
 label.bot(btex Zeman's graph etex scaled 2, (0,-4cm));
