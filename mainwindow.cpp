@@ -75,6 +75,10 @@ void MainWindow::update()
   QDir currentDir(".");
   listOfMetapostFiles = currentDir.entryList(QStringList("*.mp"));
   for (int i = 0; i < listOfMetapostFiles.size(); ++i) {
+    QFileInfo info(listOfMetapostFiles.at(i));
+    modificationTimes << info.lastModified();
+  }
+  for (int i = 0; i < listOfMetapostFiles.size(); ++i) {
     QFileInfo info(listOfMetapostFiles[i]);
     QDateTime currentTime = info.lastModified();
     if (currentTime > modificationTimes[i]) {
