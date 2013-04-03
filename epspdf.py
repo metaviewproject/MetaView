@@ -5,7 +5,7 @@ import os
 
 os.chdir('.metaview')
 
-epsFileName = sys.argv[1]
+epsFileName = '../' + sys.argv[1]
 epsFile = open(epsFileName, 'r')
 
 lines = epsFile.readlines()

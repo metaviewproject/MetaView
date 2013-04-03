@@ -5,7 +5,7 @@ beginfig(1);
 pair pi[];
 pair po[];
 
-for i = 0 upto 4
+for i = 0 upto 4:
   pi[i] = 2*cm*dir(i*(360/5));
   po[i] = 4*cm*dir(i*(360/5));
   draw pi[i]--po[i] withcolor red;
@@ -22,7 +22,7 @@ for i = 0 upto 4:
   draw vertex(po[i]);
 endfor;
 
-label.bot(btex Zeman's graph etex scaled 2, (0,-4cm));
+label.bot(btex Peter's graph etex scaled 2, (0,-4cm));
 
 endfig;
 
@@ -33,7 +33,7 @@ def draw_complete_graph(expr n, u, v) =
 
   for i=0 upto n-1:
     p[i] = u*cm*dir(i*(360/n)) + (0,(-v+1)*cm);
-    draw p[i] withpen pencircle scaled 8 withcolor black;
+    draw p[i] withpen pencircle scaled 8 withcolor green;
   endfor;
   for i=0 upto n-1:
     for j=0 upto n-1:

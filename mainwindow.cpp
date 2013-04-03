@@ -8,6 +8,16 @@ MainWindow::MainWindow()
 {
   QDir().mkdir(".metaview");
   createToolBar();
+  
+  //std::cout << QCoreApplication::applicationDirPath().toLocal8Bit().constData() << std::endl;
+
+  textEdit = new QTextEdit(this);
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->addWidget(textEdit);
+  QWidget *widget = new QWidget;
+  widget->setLayout(layout);
+  setCentralWidget(widget);
+
   createTimer();
 
   QDir currentDir(".");
@@ -30,7 +40,8 @@ QImage MainWindow::loadImage(const QString& path)
   pdfPage = pdfDocument->page(0);
 
   QImage image;
-  image = pdfPage->renderToImage(72.0, 72.0, -1, -1, -1, -1);
+  //image = pdfPage->renderToImage(144.0, 144.0, -1, -1, -1, -1);
+  image = pdfPage->renderToImage(200.0, 200.0, -1, -1, -1, -1);
 
   return image;
 }
@@ -95,10 +106,10 @@ void MainWindow::update()
       QStringList arguments;
       arguments << listOfMetapostFiles[i];
       QProcess *process = new QProcess(this);
-      process->start("./mpeps.py", arguments);
+      process->start(QCoreApplication::applicationDirPath() + "/mpeps.py", arguments);
       process->waitForFinished();
       if (process->exitCode() == 0) {
-        QDir currentDir(".metaview");
+        QDir currentDir;
         listOfEpsFiles = currentDir.entryList(QStringList("*.eps"));
         for (int j = 0; j < listOfEpsFiles.size(); ++j)
           listOfEpsFiles[j] = listOfEpsFiles[j].remove(listOfEpsFiles[j].size()-4, 4);
@@ -107,19 +118,20 @@ void MainWindow::update()
           mpFiles->addItem(listOfEpsFiles[k]);
         QStringList arguments2;
         arguments2 << (activeEpsFile + ".eps");
-        process->start("./epspdf.py", arguments2);
+        process->start(QCoreApplication::applicationDirPath() + "/epspdf.py", arguments2);
         process->waitForFinished();
         reloadView(activeEpsFile);
         modificationTimes[i] = currentTime;
       } else {
-        QFile file(".metaview/" + listOfMetapostFiles[i].remove(listOfMetapostFiles[i].size()-4,4) + ".log");
+        QString fileName = listOfMetapostFiles[i];
+        QFile file(fileName.remove(fileName.size()-3, 3) + ".log");
         if (file.open(QFile::ReadOnly | QFile::Text)) {
           QByteArray a = file.readAll();
           QString s(a);
-          std::cout << s.toLocal8Bit().constData() << std::endl;
           textEdit->setPlainText(s);
         }
-      }
+        modificationTimes[i] = currentTime;
+      }  
     }
   }
 }
@@ -131,7 +143,7 @@ void MainWindow::reloadView(const QString& file)
     QProcess *process = new QProcess(this);
     QStringList arguments;
     arguments << (activeEpsFile + ".eps");
-    process->start("./epspdf.py", arguments);
+    process->start(QCoreApplication::applicationDirPath() + "/epspdf.py", arguments);
     process->waitForFinished();
     QString activePdfFile = ".metaview/" + activeEpsFile + ".pdf";
     createView(activePdfFile);
