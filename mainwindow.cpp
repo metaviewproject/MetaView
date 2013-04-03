@@ -37,16 +37,26 @@ QImage MainWindow::loadImage(const QString& path)
 
 void MainWindow::createView(const QString& path)
 {
-  QImage image;
-  image = loadImage(path);
+  if (path != "") {
+    QImage image;
+    image = loadImage(path);
 
-  QPixmap pixmap;
-  pixmap.convertFromImage(image);
+    QPixmap pixmap;
+    pixmap.convertFromImage(image);
 
-  scene = new QGraphicsScene;
-  scene->addPixmap(pixmap);
+    scene = new QGraphicsScene;
+    scene->addPixmap(pixmap);
 
-  view = new QGraphicsView(scene);
+    view = new QGraphicsView(scene);
+  
+    textEdit = new QTextEdit(this);
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(view);
+    layout->addWidget(textEdit);
+    QWidget *widget = new QWidget;
+    widget->setLayout(layout);
+    setCentralWidget(widget);
+  }
 }
 
 void MainWindow::createToolBar()
@@ -87,19 +97,29 @@ void MainWindow::update()
       QProcess *process = new QProcess(this);
       process->start("./mpeps.py", arguments);
       process->waitForFinished();
-      QDir currentDir(".metaview");
-      listOfEpsFiles = currentDir.entryList(QStringList("*.eps"));
-      for (int j = 0; j < listOfEpsFiles.size(); ++j)
-        listOfEpsFiles[j] = listOfEpsFiles[j].remove(listOfEpsFiles[j].size()-4, 4);
-      mpFiles->clear();
-      for (int k = 0; k < listOfEpsFiles.size(); ++k)
-        mpFiles->addItem(listOfEpsFiles[k]);
-      QStringList arguments2;
-      arguments2 << (activeEpsFile + ".eps");
-      process->start("./epspdf.py", arguments2);
-      process->waitForFinished();
-      reloadView(activeEpsFile);
-      modificationTimes[i] = currentTime;
+      if (process->exitCode() == 0) {
+        QDir currentDir(".metaview");
+        listOfEpsFiles = currentDir.entryList(QStringList("*.eps"));
+        for (int j = 0; j < listOfEpsFiles.size(); ++j)
+          listOfEpsFiles[j] = listOfEpsFiles[j].remove(listOfEpsFiles[j].size()-4, 4);
+        mpFiles->clear();
+        for (int k = 0; k < listOfEpsFiles.size(); ++k)
+          mpFiles->addItem(listOfEpsFiles[k]);
+        QStringList arguments2;
+        arguments2 << (activeEpsFile + ".eps");
+        process->start("./epspdf.py", arguments2);
+        process->waitForFinished();
+        reloadView(activeEpsFile);
+        modificationTimes[i] = currentTime;
+      } else {
+        QFile file(".metaview/" + listOfMetapostFiles[i].remove(listOfMetapostFiles[i].size()-4,4) + ".log");
+        if (file.open(QFile::ReadOnly | QFile::Text)) {
+          QByteArray a = file.readAll();
+          QString s(a);
+          std::cout << s.toLocal8Bit().constData() << std::endl;
+          textEdit->setPlainText(s);
+        }
+      }
     }
   }
 }
@@ -115,6 +135,5 @@ void MainWindow::reloadView(const QString& file)
     process->waitForFinished();
     QString activePdfFile = ".metaview/" + activeEpsFile + ".pdf";
     createView(activePdfFile);
-    setCentralWidget(view);
   }
 }

@@ -7,6 +7,7 @@
 #include <QDateTime>
 #include <QStringList>
 #include <QComboBox>
+#include <QTextEdit>
 
 class MainWindow : public QMainWindow
 {
@@ -29,6 +30,7 @@ private:
   QComboBox *mpFiles;
   QString activeEpsFile;
   QStringList listOfEpsFiles;
+  QTextEdit *textEdit;
 
   QGraphicsScene *scene;
   QGraphicsView *view;

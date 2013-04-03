@@ -2,9 +2,8 @@
 
 import sys
 import os
-import shutil
 
-#shutil.copy(sys.argv[1], '.metaview');
 os.chdir('.metaview')
 
-os.system('mpost ' + '../' + sys.argv[1])
+if os.system('mpost --halt-on-error ' + '../' + sys.argv[1]) > 0:
+    sys.exit(1)

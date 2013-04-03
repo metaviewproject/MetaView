@@ -5,7 +5,7 @@ beginfig(1);
 pair pi[];
 pair po[];
 
-for i = 0 upto 4:
+for i = 0 upto 4
   pi[i] = 2*cm*dir(i*(360/5));
   po[i] = 4*cm*dir(i*(360/5));
   draw pi[i]--po[i] withcolor red;
