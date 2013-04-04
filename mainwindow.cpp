@@ -35,7 +35,9 @@ QImage MainWindow::loadImage(const QString& path)
 {
   Poppler::Document *pdfDocument;
   pdfDocument = Poppler::Document::load(path);
-
+  pdfDocument->setRenderHint(Poppler::Document::Antialiasing);
+  pdfDocument->setRenderHint(Poppler::Document::TextAntialiasing);
+  
   Poppler::Page *pdfPage;
   pdfPage = pdfDocument->page(0);
 
