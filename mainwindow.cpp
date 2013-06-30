@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 #include <iostream>
 #include <QProcess>
+#include <QScrollBar>
 
 MainWindow::MainWindow()
 {
@@ -17,6 +18,10 @@ MainWindow::MainWindow()
   QWidget *widget = new QWidget;
   widget->setLayout(layout);
   setCentralWidget(widget);
+
+  view = NULL;
+  hsbv = -1;
+  vsbv = -1;
 
   createTimer();
 
@@ -51,24 +56,33 @@ QImage MainWindow::loadImage(const QString& path)
 void MainWindow::createView(const QString& path)
 {
   if (path != "") {
-    QImage image;
-    image = loadImage(path);
+      QImage image;
+      image = loadImage(path);
 
-    QPixmap pixmap;
-    pixmap.convertFromImage(image);
+    if (view == NULL) {
+      QPixmap pixmap;
+      pixmap.convertFromImage(image);
 
-    scene = new QGraphicsScene;
-    scene->addPixmap(pixmap);
+      scene = new QGraphicsScene(this);
+      pixmap_item = scene->addPixmap(pixmap);
 
-    view = new QGraphicsView(scene);
-  
-    textEdit = new QTextEdit(this);
-    QVBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(view);
-    layout->addWidget(textEdit);
-    QWidget *widget = new QWidget;
-    widget->setLayout(layout);
-    setCentralWidget(widget);
+      view = new QGraphicsView(scene);
+      
+      textEdit = new QTextEdit(this);
+      QVBoxLayout *layout = new QVBoxLayout;
+      layout->addWidget(view);
+      layout->addWidget(textEdit);
+      QWidget *widget = new QWidget;
+      widget->setLayout(layout);
+      setCentralWidget(widget);
+    }
+    else {
+      int pos_x = view->horizontalScrollBar()->value();
+      int pos_y = view->verticalScrollBar()->value();
+      pixmap_item->setPixmap(QPixmap::fromImage(image));
+      view->horizontalScrollBar()->setValue(pos_x);
+      view->verticalScrollBar()->setValue(pos_y);
+    }
   }
 }
 
@@ -149,5 +163,6 @@ void MainWindow::reloadView(const QString& file)
     process->waitForFinished();
     QString activePdfFile = ".metaview/" + activeEpsFile + ".pdf";
     createView(activePdfFile);
+   
   }
 }

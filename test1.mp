@@ -6,8 +6,8 @@ pair pi[];
 pair po[];
 
 for i = 0 upto 4:
-  pi[i] = 2*cm*dir(i*(360/5));
-  po[i] = 4*cm*dir(i*(360/5));
+  pi[i] = 1*cm*dir(i*(360/5));
+  po[i] = 2*cm*dir(i*(360/5));
   draw pi[i]--po[i] withcolor red;
 endfor;
 for i = 0 upto 3:
@@ -22,6 +22,7 @@ for i = 0 upto 4:
   draw vertex(po[i]);
 endfor;
 
+%label.bot(btex Peter's graph etex scaled 2, (0,4cm));
 label.bot(btex Peter's graph etex scaled 2, (0,-4cm));
 
 endfig;

@@ -8,6 +8,7 @@
 #include <QStringList>
 #include <QComboBox>
 #include <QTextEdit>
+#include <QScrollArea>
 
 class MainWindow : public QMainWindow
 {
@@ -34,6 +35,9 @@ private:
 
   QGraphicsScene *scene;
   QGraphicsView *view;
+  QGraphicsPixmapItem *pixmap_item;
+  int hsbv;
+  int vsbv;
 
   QTimer *timer;
 
