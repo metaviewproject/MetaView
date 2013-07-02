@@ -17,7 +17,7 @@ ury = boundingBox[4]
 height = float(ury) - float(lly)
 width = float(urx) - float(llx)
 
-texFileName = '.metaview/' + epsFileName[:len(epsFileName)-4] + '.tex'
+texFileName = epsFileName[3:len(epsFileName)-4] + '.tex'
 texFile = open(texFileName, 'w')
 
 texFile.write('\documentclass{article}\n')
