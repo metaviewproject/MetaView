@@ -1,103 +1,13 @@
-#include <QtGui>
-#include <poppler-qt4.h>
 #include "mainwindow.h"
-#include <iostream>
-#include <QProcess>
-#include <QScrollBar>
 
 MainWindow::MainWindow()
 {
-  QDir().mkdir(".metaview");
-  createToolBar();
-  
-  //std::cout << QCoreApplication::applicationDirPath().toLocal8Bit().constData() << std::endl;
-
-  textEdit = new QTextEdit(this);
-  QVBoxLayout *layout = new QVBoxLayout;
-  layout->addWidget(textEdit);
-  QWidget *widget = new QWidget;
-  widget->setLayout(layout);
-  setCentralWidget(widget);
-
-  view = NULL;
-  hsbv = -1;
-  vsbv = -1;
-
+  metaView = new MetaView;
   createTimer();
-
-  QDir currentDir(".");
-  listOfMetapostFiles = currentDir.entryList(QStringList("*.mp"));
-
-  for (int i = 0; i < listOfMetapostFiles.size(); ++i) {
-    QFileInfo info(listOfMetapostFiles.at(i));
-    modificationTimes << info.lastModified();
-  }
-
-  setWindowTitle("MetaView");
-}
-
-QImage MainWindow::loadImage(const QString& path)
-{
-  Poppler::Document *pdfDocument;
-  pdfDocument = Poppler::Document::load(path);
-  pdfDocument->setRenderHint(Poppler::Document::Antialiasing);
-  pdfDocument->setRenderHint(Poppler::Document::TextAntialiasing);
-  
-  Poppler::Page *pdfPage;
-  pdfPage = pdfDocument->page(0);
-
-  QImage image;
-  //image = pdfPage->renderToImage(144.0, 144.0, -1, -1, -1, -1);
-  image = pdfPage->renderToImage(200.0, 200.0, -1, -1, -1, -1);
-
-  return image;
-}
-
-void MainWindow::createView(const QString& path)
-{
-  if (path != "") {
-      QImage image;
-      image = loadImage(path);
-
-    if (view == NULL) {
-      QPixmap pixmap;
-      pixmap.convertFromImage(image);
-
-      scene = new QGraphicsScene(this);
-      pixmap_item = scene->addPixmap(pixmap);
-
-      view = new QGraphicsView(scene);
-      
-      textEdit = new QTextEdit(this);
-      QVBoxLayout *layout = new QVBoxLayout;
-      layout->addWidget(view);
-      layout->addWidget(textEdit);
-      QWidget *widget = new QWidget;
-      widget->setLayout(layout);
-      setCentralWidget(widget);
-    }
-    else {
-      int pos_x = view->horizontalScrollBar()->value();
-      int pos_y = view->verticalScrollBar()->value();
-      pixmap_item->setPixmap(QPixmap::fromImage(image));
-      view->horizontalScrollBar()->setValue(pos_x);
-      view->verticalScrollBar()->setValue(pos_y);
-    }
-  }
-}
-
-void MainWindow::createToolBar()
-{
-  toolBar = addToolBar("main toolbar");
-  mpFiles = new QComboBox;
-  QDir currentDir;
-  listOfEpsFiles = currentDir.entryList(QStringList("*.eps"));
-  for (int i = 0; i < listOfEpsFiles.size(); ++i) {
-    listOfEpsFiles[i] = listOfEpsFiles[i].remove(listOfEpsFiles[i].size()-4, 4);
-    mpFiles->addItem(listOfEpsFiles[i]);
-  }
-  toolBar->addWidget(mpFiles);
-  connect(mpFiles, SIGNAL(activated(const QString&)), this, SLOT(reloadView(const QString&)));
+  createActions();
+  createMenus();
+  createToolBar();
+  createErrorTabs();
 }
 
 void MainWindow::createTimer()
@@ -107,62 +17,126 @@ void MainWindow::createTimer()
   timer->start(1000);
 }
 
-void MainWindow::update()
+void MainWindow::createActions()
 {
-  QDir currentDir(".");
-  listOfMetapostFiles = currentDir.entryList(QStringList("*.mp"));
-  for (int i = 0; i < listOfMetapostFiles.size(); ++i) {
-    QFileInfo info(listOfMetapostFiles.at(i));
-    modificationTimes << info.lastModified();
-  }
-  for (int i = 0; i < listOfMetapostFiles.size(); ++i) {
-    QFileInfo info(listOfMetapostFiles[i]);
-    QDateTime currentTime = info.lastModified();
-    if (currentTime > modificationTimes[i]) {
-      QStringList arguments;
-      arguments << listOfMetapostFiles[i];
-      QProcess *process = new QProcess(this);
-      process->start(QCoreApplication::applicationDirPath() + "/mpeps.py", arguments);
-      process->waitForFinished();
-      if (process->exitCode() == 0) {
-        QDir currentDir;
-        listOfEpsFiles = currentDir.entryList(QStringList("*.eps"));
-        for (int j = 0; j < listOfEpsFiles.size(); ++j)
-          listOfEpsFiles[j] = listOfEpsFiles[j].remove(listOfEpsFiles[j].size()-4, 4);
-        mpFiles->clear();
-        for (int k = 0; k < listOfEpsFiles.size(); ++k)
-          mpFiles->addItem(listOfEpsFiles[k]);
-        QStringList arguments2;
-        arguments2 << (activeEpsFile + ".eps");
-        process->start(QCoreApplication::applicationDirPath() + "/epspdf.py", arguments2);
-        process->waitForFinished();
-        reloadView(activeEpsFile);
-        modificationTimes[i] = currentTime;
-      } else {
-        QString fileName = listOfMetapostFiles[i];
-        QFile file(fileName.remove(fileName.size()-3, 3) + ".log");
-        if (file.open(QFile::ReadOnly | QFile::Text)) {
-          QByteArray a = file.readAll();
-          QString s(a);
-          textEdit->setPlainText(s);
-        }
-        modificationTimes[i] = currentTime;
-      }  
-    }
-  }
+  newFolderAct = new QAction(QIcon(":/images/new-folder.png"), tr("&Open..."), this);
+  newFolderAct->setShortcuts(QKeySequence::Open);
+  newFolderAct->setStatusTip(tr(":/images/Choose an existing directory"));
+  connect(newFolderAct, SIGNAL(triggered()), this, SLOT(open()));
+  
+  zoomInAct = new QAction(QIcon(":/images/zoom-in.png"), tr("Zoom In"), this);
+  zoomInAct->setStatusTip(tr("Zoom in"));
+  connect(zoomInAct, SIGNAL(triggered()), this, SLOT(zoomIn()));
+  
+  zoomOutAct = new QAction(QIcon(":/images/zoom-out.png"), tr("Zoom Out"), this);
+  zoomOutAct->setStatusTip(tr("Zoom out"));
+  connect(zoomOutAct, SIGNAL(triggered()), this, SLOT(zoomOut()));
+  
+  showErrorAct = new QAction(QIcon(":/images/error.png"), tr("Show Error"), this);
+  showErrorAct->setCheckable(true);
+  showErrorAct->setStatusTip(tr("Zoom out"));
+  
+  closeAct = new QAction(tr("E&xit"), this);
+  closeAct->setShortcuts(QKeySequence::Quit);
+  closeAct->setStatusTip(tr("Exit the application"));
+  connect(closeAct, SIGNAL(triggered()), this, SLOT(close()));
 }
 
-void MainWindow::reloadView(const QString& file)
+void MainWindow::zoomIn()
 {
-  if (file != "") {
-    activeEpsFile = file;
-    QProcess *process = new QProcess(this);
-    QStringList arguments;
-    arguments << (activeEpsFile + ".eps");
-    process->start(QCoreApplication::applicationDirPath() + "/epspdf.py", arguments);
-    process->waitForFinished();
-    QString activePdfFile = ".metaview/" + activeEpsFile + ".pdf";
-    createView(activePdfFile);
-   
+  metaView->zoomIn();
+}
+
+void MainWindow::zoomOut()
+{
+  metaView->zoomOut();
+}
+
+void MainWindow::createMenus()
+{
+  fileMenu = menuBar()->addMenu(tr("&File"));
+  fileMenu->addAction(newFolderAct);
+  fileMenu->addAction(showErrorAct);
+  fileMenu->addSeparator();
+  fileMenu->addAction(closeAct);
+ 
+  editMenu = menuBar()->addMenu(tr("&Edit"));
+  editMenu->addAction(zoomInAct);
+  editMenu->addAction(zoomOutAct);
+}
+
+void MainWindow::createToolBar()
+{
+  epsFiles = new QComboBox(this);
+  connect(epsFiles, SIGNAL(activated(const QString&)), this, SLOT(change(const QString&)));
+
+  fileToolBar = addToolBar("File");
+  fileToolBar->addAction(newFolderAct);
+  fileToolBar->addWidget(epsFiles);
+  fileToolBar->addAction(showErrorAct);
+
+  editToolBar = addToolBar("Edit");
+  editToolBar->addAction(zoomInAct);
+  editToolBar->addAction(zoomOutAct);
+}
+
+void MainWindow::createErrorTabs()
+{
+  errorWindow = new QDockWidget(tr("Error Window"), this);
+
+  errorTabLog = new ErrorTab(this);
+  errorTabMp = new ErrorTab(this);
+  errorTabMpx = new ErrorTab(this);
+
+  errorTabs = new QTabWidget(this);
+  errorTabs->addTab(errorTabLog, tr("log"));
+  errorTabs->addTab(errorTabMp, tr("mp"));
+  errorTabs->addTab(errorTabMpx, tr("mpx"));
+
+  errorWindow->setWidget(errorTabs);
+  errorWindow->setVisible(false);
+  addDockWidget(Qt::RightDockWidgetArea, errorWindow);
+  connect(showErrorAct, SIGNAL(toggled(bool)), errorWindow, SLOT(setVisible(bool)));
+}
+
+void MainWindow::change(const QString& fileName)
+{
+  metaView->updateView(fileName);
+}
+
+void MainWindow::open()
+{
+  workingDirPath = QFileDialog::getExistingDirectory(
+      this, tr("Choose Directory"), "/home",
+      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+  
+  QDir(workingDirPath).mkdir(".metaview");
+
+  metaView = new MetaView(workingDirPath, this);
+  setCentralWidget(metaView);
+}
+
+void MainWindow::update()
+{
+  QList<QString> filesWithError;
+  filesWithError = metaView->compileMetapostFiles();
+ 
+  // TODO
+  if (filesWithError.size() == 0) {
+    // TODO
+    epsFiles->clear();
+    listOfEpsFiles = metaView->findEpsFiles();
+    for (int i = 0; i < listOfEpsFiles.size(); i++)
+      epsFiles->addItem(listOfEpsFiles[i]);
+  } else {
+    QString fileName = filesWithError[0];
+    fileName.remove(fileName.size() - 3, 3);
+    QFile logFile(fileName + ".log");
+    QFile mpFile(filesWithError[0]);
+    QFile mpxFile(fileName + ".mpx");
+    errorTabLog->displayFile(logFile);
+    errorTabMp->displayFile(mpFile);
+    errorTabMpx->displayFile(mpxFile);
+    showErrorAct->trigger();
   }
 }

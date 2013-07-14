@@ -1,48 +1,61 @@
-#ifndef METAVIEW_H
-#define METAVIEW_H
-
-#include <QMainWindow>
-#include <QGraphicsScene>
-#include <QGraphicsView>
-#include <QDateTime>
-#include <QStringList>
+#include <QAction>
 #include <QComboBox>
-#include <QTextEdit>
-#include <QScrollArea>
+#include <QDockWidget>
+#include <QFileDialog>
+#include <QIcon>
+#include <QList>
+#include <QMainWindow>
+#include <QMenu>
+#include <QMenuBar>
+#include <QPushButton>
+#include <QString>
+#include <QTabWidget>
+#include <QToolBar>
+#include <QTimer>
+
+#include "metaview.h"
+#include "metaerror.h"
 
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
 
 public:
+
   MainWindow();
 
 public slots:
+
+  void change(const QString&);
+  void open();
   void update();
-  void reloadView(const QString&);
+  void zoomIn();
+  void zoomOut();
 
 private:
-  void createToolBar();
-  QImage loadImage(const QString&);
-  void createView(const QString&);
+  void createActions();
+  void createErrorTabs();
+  void createMenus();
   void createTimer();
+  void createToolBar();
 
-  QToolBar *toolBar;
-  QComboBox *mpFiles;
-  QString activeEpsFile;
-  QStringList listOfEpsFiles;
-  QTextEdit *textEdit;
-
-  QGraphicsScene *scene;
-  QGraphicsView *view;
-  QGraphicsPixmapItem *pixmap_item;
-  int hsbv;
-  int vsbv;
-
+  MetaView *metaView;
+  ErrorTab *errorTabLog;
+  ErrorTab *errorTabMp;
+  ErrorTab *errorTabMpx;
+  QComboBox *epsFiles;
+  QDockWidget *errorWindow;
+  QList<QString> listOfEpsFiles;
+  QString workingDirPath;
+  QTabWidget *errorTabs;
   QTimer *timer;
-
-  QStringList listOfMetapostFiles;
-  QList<QDateTime> modificationTimes;
+  QToolBar *fileToolBar;
+  QToolBar *editToolBar;
+  QMenu *fileMenu;
+  QMenu *editMenu;
+  QAction *newFolderAct;
+  QAction *zoomInAct;
+  QAction *zoomOutAct;
+  QAction *showErrorAct;
+  QAction *closeAct;
 };
-
-#endif

@@ -1,14 +1,17 @@
 #include <QApplication>
+#include <QDir>
+#include <QString>
+#include <QTextStream>
+
 #include "mainwindow.h"
 
 int main(int argc, char **argv)
 {
   QApplication app(argc, argv);
 
-  MainWindow mainWindow;
-  mainWindow.resize(300, 300);
-  mainWindow.setWindowTitle("MetaView");
-  mainWindow.show();
+  MainWindow window;
+  window.resize(400, 400);
+  window.show();
 
   return app.exec();
 }
