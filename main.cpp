@@ -1,17 +1,14 @@
 #include <QApplication>
-#include <QDir>
-#include <QString>
-#include <QTextStream>
 
-#include "mainwindow.h"
+#include "instantviewerwindow.h"
 
 int main(int argc, char **argv)
 {
   QApplication app(argc, argv);
 
-  MainWindow window;
-  window.resize(400, 400);
-  window.show();
+  InstantViewerWindow instantViewer;
+  instantViewer.resize(400, 400);
+  instantViewer.show();
 
   return app.exec();
 }
